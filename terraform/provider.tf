@@ -1,3 +1,5 @@
+# ALL INFRASTRUCTURE DEPLOYED IN DEV ENV 3524...........
+
 # This file tells Terraform two things: which "provider" (cloud/service) we're
 # working with, and which version of Terraform and that provider we expect.
 #
