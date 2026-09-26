@@ -13,6 +13,12 @@ paths inside the container), this reimplements the same cleaning / feature
 engineering / training logic directly. The steps are identical to
 src/data.py, src/features.py, and src/train.py - just written for a
 container environment instead of a local one.
+
+Note: the SageMaker scikit-learn container runs an older Python/pandas
+version than your local venv, so select_dtypes() here uses only "object"
+(not the newer "str" dtype your local pandas added) - the older pandas
+treats all text columns as "object" anyway, so this is equivalent, just
+compatible with both environments.
 """
 
 import argparse
@@ -60,7 +66,9 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df = df.drop(columns=["customerID"])
     df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
-    categorical_cols = df.select_dtypes(include=["object", "str"]).columns.tolist()
+    # "object" only here - the container's older pandas doesn't have the
+    # separate "str" dtype, and treats all text columns as "object" anyway.
+    categorical_cols = df.select_dtypes(include=["object"]).columns.tolist()
     df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
     return df
 

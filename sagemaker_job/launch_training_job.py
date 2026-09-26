@@ -89,6 +89,8 @@ def main() -> None:
 
     output_data_config = OutputDataConfig(s3_output_path=output_s3_uri)
 
+    base_job_name = "churn-prediction-training"
+
     model_trainer = ModelTrainer(
         training_image=training_image,
         source_code=source_code,
@@ -96,7 +98,7 @@ def main() -> None:
         output_data_config=output_data_config,
         role=args.role_arn,
         sagemaker_session=session,
-        base_job_name="churn-prediction-training",
+        base_job_name=base_job_name,
     )
 
     # "train" is the channel name - inside the container, entry_point.py reads
@@ -107,14 +109,31 @@ def main() -> None:
     print(f"Starting SageMaker training job, reading data from {train_data_s3_uri}")
     print(f"Trained model will be saved under {output_s3_uri}")
 
-    training_job = model_trainer.train(input_data_config=[train_data])
-    print(f"Training job finished: {training_job.name}")
+    # NOTE: in this SDK version, .train() does not reliably return the
+    # TrainingJob object (it can return None even on success - the real job
+    # already ran and completed by this point, this is purely about looking
+    # up its name afterwards). We don't rely on the return value; instead we
+    # ask AWS directly for the most recent job matching our base name, which
+    # works regardless of what .train() happens to hand back.
+    model_trainer.train(input_data_config=[train_data])
 
-    # Asking the AWS API directly for the final artifact location, rather than
-    # relying on an SDK attribute that may differ between versions - this call
-    # is stable regardless of which SDK version launched the job.
     sm_client = boto3.client("sagemaker", region_name=region)
-    description = sm_client.describe_training_job(TrainingJobName=training_job.name)
+    recent_jobs = sm_client.list_training_jobs(
+        NameContains=base_job_name,
+        SortBy="CreationTime",
+        SortOrder="Descending",
+        MaxResults=1,
+    )
+
+    if not recent_jobs["TrainingJobSummaries"]:
+        print("Training finished, but could not look up the job name afterwards.")
+        print(f"Check the SageMaker console, or list objects under {output_s3_uri} directly.")
+        return
+
+    job_name = recent_jobs["TrainingJobSummaries"][0]["TrainingJobName"]
+    print(f"Training job finished: {job_name}")
+
+    description = sm_client.describe_training_job(TrainingJobName=job_name)
     model_s3_uri = description["ModelArtifacts"]["S3ModelArtifacts"]
 
     print(f"Model artifact location: {model_s3_uri}")
@@ -122,4 +141,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
