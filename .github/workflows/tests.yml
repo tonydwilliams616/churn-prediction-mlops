@@ -1,0 +1,39 @@
+# GitHub Actions workflow: runs the test suite automatically on every push
+# and every pull request. This is Domain 4 CI in its most basic, genuinely
+# useful form - nobody can merge broken code into main without the tests
+# having run first (once branch protection is turned on, which we'll cover
+# separately - right now this runs and reports, but doesn't yet block a merge).
+#
+# GitHub Actions is completely separate from AWS - this runs on GitHub's own
+# infrastructure, triggered by events in this repository, and knows nothing
+# about SageMaker, S3, or anything AWS-specific. It's a general-purpose CI
+# tool that happens to be built into GitHub.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pandas
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v
