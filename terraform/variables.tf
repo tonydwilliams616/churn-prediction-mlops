@@ -19,3 +19,8 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "alert_email" {
+  description = "Email address for budget alerts. Deliberately has NO default - this is personal information and this repo is public, so it must be supplied locally (via terraform.tfvars, gitignored) rather than committed to the file itself."
+  type        = string
+}

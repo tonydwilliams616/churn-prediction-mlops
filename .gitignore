@@ -9,11 +9,13 @@ __pycache__/
 .ipynb_checkpoints/
 venv/
 .env
+venv-pipeline/
 
 # terraform
 terraform/.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.backup
+terraform.tfvars
 
 # OS
 .DS_Store
