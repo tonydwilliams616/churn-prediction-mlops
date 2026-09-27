@@ -1,0 +1,42 @@
+# Scheduled drift monitoring - conceptually different from tests.yml, even
+# though both run on GitHub Actions. tests.yml checks "is the CODE correct?"
+# and runs on every push/PR. This workflow checks "does the DATA still look
+# like what the model was trained on?" and runs on a schedule, independent
+# of whether any code changed at all - that's the real distinction between
+# CI (testing) and monitoring (Domain 4) in practice.
+#
+# Currently checks the training data against itself as a working
+# demonstration (see src/check_drift.py's docstring) - point --new-data at
+# real fresh data once this project has live production traffic to monitor.
+
+name: Drift Check
+
+on:
+  schedule:
+    # Runs every Monday at 09:00 UTC. Cron syntax: minute hour day month weekday.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    # Adds a manual "Run workflow" button on the Actions tab, so you can
+    # trigger this on demand without waiting for the schedule - useful for
+    # testing that it works at all.
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy
+
+      - name: Run drift check
+        run: |
+          python -m src.check_drift
