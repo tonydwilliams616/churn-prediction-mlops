@@ -1,0 +1,10 @@
+# Copy this file to terraform.tfvars (which is gitignored) and fill in your
+# real value. terraform.tfvars is loaded automatically by Terraform - you
+# don't need to pass it with any special flag.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# Never commit terraform.tfvars itself - only this .example file, which
+# contains no real personal information, belongs in git.
+
+alert_email = "tonydwilliams@yahoo.co.uk"
